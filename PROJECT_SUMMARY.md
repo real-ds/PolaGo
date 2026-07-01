@@ -261,4 +261,73 @@ Reference task IDs from `Project_SRS.md`, Section 8 (Work Breakdown Structure), 
 
 ---
 
+## [2026-07-01] Session 5: Bug Fixes — WebRTC Partner Discovery, Dual-Camera Capture, CSS Filters, Cross-Tab Signaling
+
+**WBS Reference:** Section 8.3 (Room & Signaling), 8.4 (Peer Connection), 8.5 (Camera), 8.6 (Booth & Compositor), 8.7 (Filter Engine), 8.10 (Export)
+
+**Completed:**
+
+**Bugs fixed:**
+1. **Partner camera not visible (WebRTC never connected)**:
+   - Replaced one-way `partner-joined` event with bidirectional `hello` exchange in `RoomService`. Both sides send `hello` on connect and auto-respond on receipt, ensuring both discover each other even when navigation causes transport re-creation.
+   - Added `hostRoom(roomId)` method to `RoomService` / `useRoom` / `RoomContext` — allows the host to reconnect to an existing room with "host" role after navigating from `/room/new` to `/room/[roomId]`.
+   - Booth page reads `?role=host` query param to assign correct role; guest auto-accepts WebRTC (`acceptConnection`); host initiates (`initiateConnection`).
+   - `PeerConnectionManager.ensureConnection()` — lazy RTCPeerConnection creation so the guest side processes offers even without an explicit `acceptConnection` call.
+
+2. **Capture only saved local camera (partner missing from final image)**:
+   - Replaced `captureFilteredFrame` (single video → canvas) with `captureFilteredComposite` (local video + remote video → composited via active `CompositeStrategy` → filter applied).
+   - Added hidden `remoteVideoRef` fed from `peer.remoteStream` — parallel to the existing local video ref.
+   - Capture now uses `SplitScreenComposite`, `PictureInPictureComposite`, or `HeartFrameComposite` depending on the selected layout, merging both cameras before the pixel filter is applied.
+
+3. **Images stretched in polaroid strip**:
+   - Rewrote polaroid thumbnail layout in `handleViewResult` — calculates aspect-ratio-aware `drawW/drawH` with centered letterboxing inside each polaroid frame cell.
+
+4. **Filter selection had no visual effect**:
+   - Added `cssFilter` property to `IFilter` interface + all 9 filter implementations (Vintage, Sepia, B&W, Pastel Pop, Vivid, Soft Glow, Warm Tone, Cool Tone, Film Grain).
+   - `BoothStage` reads the CSS filter string and applies `style={{ filter }}` to both video elements for live preview.
+   - Canvas pixel filter still applied to captured frames for export fidelity.
+
+5. **PiP/Heart layout switching showed no change (remote stream always null)**:
+   - Fixed `BoothStage` heart layout to show remote video as a PiP inset (was falling through to local-only default).
+   - PiP layout shows remote as full-screen, local as inset; split shows side-by-side; heart shows local as main + remote as inset.
+   - All layouts show "Waiting for partner..." placeholder when remote stream is null.
+
+6. **Connection status always "idle"** (blocked by #1 — now resolved with hello exchange + lazy WebRTC accept).
+
+7. **InMemoryTransport only worked in same JS runtime (not cross-tab)**:
+   - Added `BroadcastChannel` support to `InMemoryTransport` — when connecting to a room, creates a `BroadcastChannel("polago:<roomId>")` and uses it for pub/sub messaging across tabs.
+
+**Files modified:**
+- `src/core/room/RoomService.ts` — hello exchange, hostRoom method, no hello on createRoom
+- `src/core/room/transports/InMemoryTransport.ts` — BroadcastChannel for cross-tab signaling
+- `src/core/peer/PeerConnectionManager.ts` — ensureConnection() lazy init, simplified async
+- `src/core/filters/IFilter.ts` — added cssFilter property
+- `src/core/filters/implementations/*.ts` (9 files) — cssFilter values for all filters
+- `src/hooks/useFilterEngine.ts` — synchronous filter registration (from module scope)
+- `src/hooks/useRoom.ts` — added hostRoom callback
+- `src/context/RoomContext.tsx` — exposed hostRoom
+- `src/components/booth/BoothStage.tsx` — CSS filter on video, heart layout shows remote, placeholder for null remote
+- `src/app/room/[roomId]/page.tsx` — captureFilteredComposite, remoteVideoRef, aspect-ratio-safe strip, role query param
+- `src/app/room/new/page.tsx` — pass `?role=host` when navigating to booth
+
+**Build/Test:**
+- Build: 0 TypeScript errors, all 7 routes compile
+- Tests: 49/49 pass (9 test files)
+- CI: GitHub Actions triggers on push (lint → test → build)
+- Deployment: Vercel auto-deploys on push to `master`
+
+**Known issues / TODO carried forward:**
+- Ably API key still needs to be configured in Vercel dashboard for cross-device (non-same-browser) signaling — currently BroadcastChannel only works within same browser
+- No TURN server configured for NAT traversal fallback
+- Film Grain filter has no CSS equivalent (approximated with contrast/brightness)
+- Gallery doesn't auto-populate with captured frames
+- Sticker/frame SVG assets not yet added to `public/assets/`
+- PWA manifest/service worker not configured (NFR-15)
+- i18n structure not set up (NFR-14)
+
+**Next recommended task:**
+- Configure `NEXT_PUBLIC_ABLY_API_KEY` in Vercel dashboard → Settings → Environment Variables for cross-device signaling, then write Playwright e2e tests for two-peer room simulation.
+
+---
+
 <!-- Add new entries above this line, newest first -->
