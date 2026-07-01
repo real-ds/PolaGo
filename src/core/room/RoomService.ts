@@ -26,9 +26,12 @@ export class RoomService {
   }
 
   private setupListeners(): void {
-    this.transport.on("partner-joined", () => {
-      this._partnerPresent = true;
-      this.callbacks?.onPartnerJoined();
+    this.transport.on("hello", () => {
+      if (!this._partnerPresent) {
+        this._partnerPresent = true;
+        this.callbacks?.onPartnerJoined();
+        this.transport.send("hello", {});
+      }
     });
     this.transport.on("partner-left", () => {
       this._partnerPresent = false;
@@ -81,7 +84,7 @@ export class RoomService {
     this.role = "guest";
     await this.transport.connect(roomId);
     this._connected = true;
-    this.transport.send("partner-joined", { participantId: this.participantId });
+    this.transport.send("hello", {});
   }
 
   async hostRoom(roomId: string): Promise<void> {
@@ -89,6 +92,7 @@ export class RoomService {
     this.role = "host";
     await this.transport.connect(roomId);
     this._connected = true;
+    this.transport.send("hello", {});
   }
 
   sendReadyState(ready: boolean): void {

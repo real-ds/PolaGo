@@ -18,27 +18,59 @@ import { createSignalingTransport } from "@/lib/signaling";
 import { FilterRegistry } from "@/core/filters/FilterRegistry";
 import { ExportService } from "@/core/export/ExportService";
 import { generateFilename } from "@/lib/utils";
+import { SplitScreenComposite } from "@/core/compositor/implementations/SplitScreenComposite";
+import { PictureInPictureComposite } from "@/core/compositor/implementations/PictureInPictureComposite";
+import { HeartFrameComposite } from "@/core/compositor/implementations/HeartFrameComposite";
+import { CompositeStrategy } from "@/core/compositor/CompositeStrategy";
 
 const SHOTS_TOTAL = 4;
+const FRAME_W = 640;
+const FRAME_H = 480;
 
-function captureFilteredFrame(
-  video: HTMLVideoElement,
+const strategies: Record<CompositeStyle, CompositeStrategy> = {
+  split: new SplitScreenComposite(),
+  pip: new PictureInPictureComposite(),
+  heart: new HeartFrameComposite(),
+};
+
+function captureFilteredComposite(
+  localVideo: HTMLVideoElement,
+  remoteVideo: HTMLVideoElement | null,
   filterId: string | null,
-  width = 640,
-  height = 480
+  layout: CompositeStyle,
+  width = FRAME_W,
+  height = FRAME_H
 ): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext("2d")!;
-  ctx.drawImage(video, 0, 0, width, height);
+  const localCanvas = document.createElement("canvas");
+  localCanvas.width = width;
+  localCanvas.height = height;
+  const localCtx = localCanvas.getContext("2d")!;
+  localCtx.drawImage(localVideo, 0, 0, width, height);
+
+  const target = document.createElement("canvas");
+  target.width = width;
+  target.height = height;
+
+  if (remoteVideo && remoteVideo.videoWidth) {
+    const remoteCanvas = document.createElement("canvas");
+    remoteCanvas.width = width;
+    remoteCanvas.height = height;
+    const remoteCtx = remoteCanvas.getContext("2d")!;
+    remoteCtx.drawImage(remoteVideo, 0, 0, width, height);
+    strategies[layout].compose(localCanvas, remoteCanvas, target);
+  } else {
+    const ctx = target.getContext("2d")!;
+    ctx.drawImage(localCanvas, 0, 0);
+  }
+
   if (filterId) {
     const filter = FilterRegistry.get(filterId);
     if (filter) {
-      filter.apply(ctx, width, height);
+      filter.apply(target.getContext("2d")!, width, height);
     }
   }
-  return canvas;
+
+  return target;
 }
 
 function BoothRoomContent() {
@@ -58,6 +90,7 @@ function BoothRoomContent() {
   const { filters, activeFilterId, setActiveFilter } = useFilterEngine();
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const [capturedFrames, setCapturedFrames] = useState<HTMLCanvasElement[]>([]);
   const [showResult, setShowResult] = useState(false);
   const [resultComposite, setResultComposite] = useState<HTMLCanvasElement | null>(null);
@@ -94,6 +127,13 @@ function BoothRoomContent() {
   }, [localStream]);
 
   useEffect(() => {
+    if (remoteVideoRef.current && peer.remoteStream) {
+      remoteVideoRef.current.srcObject = peer.remoteStream;
+      remoteVideoRef.current.play().catch(() => {});
+    }
+  }, [peer.remoteStream]);
+
+  useEffect(() => {
     if (!localStream || !partnerPresent) return;
     if (role === "host" && peer.status === "idle") {
       peer.initiateConnection(localStream);
@@ -109,13 +149,19 @@ function BoothRoomContent() {
   }, [ready, roomService]);
 
   const handleCapture = useCallback(() => {
-    const videoEl = localVideoRef.current;
-    if (!videoEl || !videoEl.videoWidth) return;
+    const localEl = localVideoRef.current;
+    if (!localEl || !localEl.videoWidth) return;
 
-    const capture = captureFilteredFrame(videoEl, activeFilterId);
+    const remoteEl = remoteVideoRef.current;
+    const capture = captureFilteredComposite(
+      localEl,
+      remoteEl?.videoWidth ? remoteEl : null,
+      activeFilterId,
+      layout
+    );
     setPreviewFrame(capture);
     setShowPreview(true);
-  }, [activeFilterId]);
+  }, [activeFilterId, layout]);
 
   const handleConfirmCapture = useCallback(() => {
     if (previewFrame) {
@@ -146,8 +192,8 @@ function BoothRoomContent() {
     if (capturedFrames.length === 0) return;
     const composite = document.createElement("canvas");
     const stripWidth = 400;
-    const frameHeight = 500;
     const gap = 8;
+    const frameHeight = 500;
     const totalHeight = capturedFrames.length * frameHeight + (capturedFrames.length - 1) * gap + 80;
     composite.width = stripWidth;
     composite.height = totalHeight;
@@ -173,17 +219,26 @@ function BoothRoomContent() {
       ctx.fill();
       ctx.shadowBlur = 0;
 
-      const imgY = y + 12;
-      const imgH = polaroidW * 0.75;
       const imgX = polaroidX + 12;
-      ctx.drawImage(frame, imgX, imgY, polaroidW - 24, imgH);
+      const imgMaxW = polaroidW - 24;
+      const imgMaxH = frameHeight - 48;
+      const imgAspect = frame.width / frame.height;
+      let drawW = imgMaxW;
+      let drawH = drawW / imgAspect;
+      if (drawH > imgMaxH) {
+        drawH = imgMaxH;
+        drawW = drawH * imgAspect;
+      }
+      const drawX = imgX + (imgMaxW - drawW) / 2;
+      const drawY = y + 12 + (imgMaxH - drawH) / 2;
+      ctx.drawImage(frame, drawX, drawY, drawW, drawH);
 
       ctx.fillStyle = "#ec4899";
       ctx.font = "10px Quicksand, sans-serif";
       ctx.textAlign = "left";
-      ctx.fillText(`#${i + 1}`, imgX, imgY + imgH + 20);
+      ctx.fillText(`#${i + 1}`, imgX, y + frameHeight - 16);
       ctx.textAlign = "right";
-      ctx.fillText(new Date().toLocaleDateString(), imgX + polaroidW - 24, imgY + imgH + 20);
+      ctx.fillText(new Date().toLocaleDateString(), imgX + imgMaxW, y + frameHeight - 16);
     });
 
     setResultComposite(composite);
@@ -277,7 +332,14 @@ function BoothRoomContent() {
         playsInline
         muted
         className="absolute opacity-0 pointer-events-none"
-        style={{ width: 640, height: 480 }}
+        style={{ width: FRAME_W, height: FRAME_H }}
+      />
+      <video
+        ref={remoteVideoRef}
+        autoPlay
+        playsInline
+        className="absolute opacity-0 pointer-events-none"
+        style={{ width: FRAME_W, height: FRAME_H }}
       />
 
       {capturedFrames.length > 0 && !showResult && (
