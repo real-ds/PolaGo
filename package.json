@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:ngrok": "concurrently -k \"npm run dev\" \"npx ngrok http 3000\"",
+    "dev:tunnel": "concurrently -k \"npm run dev\" \"npx ngrok http 3000 --log=stdout\"",
+    "dev:cloudflare": "concurrently -k \"wait-on http://localhost:3000 && npx cloudflared tunnel --url http://localhost:3000\" \"npm run dev\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -11,13 +14,25 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-label": "^2.1.15",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@radix-ui/react-tooltip": "^1.2.16",
+    "@types/canvas-confetti": "^1.9.0",
     "ably": "^2.23.0",
+    "canvas-confetti": "^1.9.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.42.2",
     "idb-keyval": "^6.2.6",
     "jszip": "^3.10.1",
+    "lucide-react": "^1.41.0",
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "sonner": "^2.0.8",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss-animate": "^1.0.7",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
@@ -29,11 +44,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.3",
+    "concurrently": "^10.0.5",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.9"
+    "vitest": "^4.1.9",
+    "wait-on": "^9.1.0"
   }
 }

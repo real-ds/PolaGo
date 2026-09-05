@@ -5,11 +5,60 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
+
+  /* Claymorphism Design Tokens - Pola Go */
+  --color-primary: #f97316;
+  --color-primary-foreground: #0f172a;
+  --color-secondary: #fb923c;
+  --color-secondary-foreground: #0f172a;
+  --color-accent: #2563eb;
+  --color-accent-foreground: #ffffff;
+  --color-muted: #f1f0f0;
+  --color-muted-foreground: #475569;
+  --color-destructive: #dc2626;
+  --color-destructive-foreground: #ffffff;
+  --color-card: #ffffff;
+  --color-card-foreground: #9a3412;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #9a3412;
+  --color-border: #fed7aa;
+  --color-input: #fed7aa;
+  --color-ring: #f97316;
+
+  /* Radius */
+  --radius: 1rem;
+
+  /* Spacing Scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
 }
 
 :root {
-  --background: #fff5f7;
-  --foreground: #2d2d2d;
+  --background: #fff7ed;
+  --foreground: #9a3412;
+  --card: #ffffff;
+  --card-foreground: #9a3412;
+  --popover: #ffffff;
+  --popover-foreground: #9a3412;
+  --primary: #f97316;
+  --primary-foreground: #0f172a;
+  --secondary: #fb923c;
+  --secondary-foreground: #0f172a;
+  --muted: #f1f0f0;
+  --muted-foreground: #475569;
+  --accent: #2563eb;
+  --accent-foreground: #ffffff;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #fed7aa;
+  --input: #fed7aa;
+  --ring: #f97316;
+  --radius: 1rem;
 }
 
 body {
@@ -18,18 +67,70 @@ body {
   font-family: var(--font-quicksand), ui-sans-serif, system-ui, sans-serif;
 }
 
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+  }
+}
+
 @layer utilities {
+  /* Claymorphism shadow utilities */
+  .shadow-clay-sm {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .shadow-clay {
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  .shadow-clay-lg {
+    box-shadow:
+      0 10px 15px rgba(0, 0, 0, 0.1),
+      inset 0 2px 0 rgba(255, 255, 255, 0.7);
+  }
+
+  .shadow-clay-xl {
+    box-shadow:
+      0 20px 25px rgba(0, 0, 0, 0.15),
+      inset 0 3px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  /* Claymorphism interactive button shadow */
+  .shadow-clay-button {
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      0 0 0 3px rgba(249, 115, 22, 0.2);
+  }
+
+  /* Animation utilities */
   .animation-delay-200 {
     animation-delay: 200ms;
   }
   .animation-delay-400 {
     animation-delay: 400ms;
   }
+
+  /* Scrollbar hide */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Claymorphism pressed state */
+  .pressed-clay {
+    box-shadow:
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      inset 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 }

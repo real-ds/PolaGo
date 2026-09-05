@@ -12,6 +12,7 @@ interface UseCameraReturn {
   stopCamera: () => void;
   switchCamera: () => Promise<void>;
   captureFrame: (width?: number, height?: number) => HTMLCanvasElement | null;
+  clearError: () => void;
 }
 
 export function useCamera(): UseCameraReturn {
@@ -34,6 +35,8 @@ export function useCamera(): UseCameraReturn {
       setLoading(false);
     }
   }, [facingMode]);
+
+  const clearError = useCallback(() => setError(null), []);
 
   const stopCamera = useCallback(() => {
     serviceRef.current.stopStream();
@@ -67,5 +70,5 @@ export function useCamera(): UseCameraReturn {
     };
   }, []);
 
-  return { stream, error, loading, facingMode, startCamera, stopCamera, switchCamera, captureFrame };
+  return { stream, error, loading, facingMode, startCamera, stopCamera, switchCamera, captureFrame, clearError };
 }

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/ui/Card";
+import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Copy, Share2, Check } from "lucide-react";
 
 interface RoomShareCardProps {
   roomId: string;
@@ -17,40 +18,47 @@ export function RoomShareCard({ roomId, roomLink }: RoomShareCardProps) {
       await navigator.clipboard.writeText(roomLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch {
-    }
+    } catch {}
   };
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({ url: roomLink });
-      } catch {
-      }
+      } catch {}
     } else {
       handleCopyLink();
     }
   };
 
   return (
-    <Card variant="cute" className="p-6 text-center max-w-md mx-auto">
-      <h3 className="font-fredoka text-xl text-pink-700 mb-2">Your Room is Ready!</h3>
-      <p className="font-quicksand text-gray-500 text-sm mb-4">
-        Share this link with your partner to start your photo session
-      </p>
-      <div className="bg-white rounded-xl p-3 mb-4 border border-pink-100">
-        <code className="font-mono text-sm text-pink-600 break-all">{roomLink}</code>
-      </div>
-      <div className="flex gap-3 justify-center">
-        <Button variant="primary" size="md" onClick={handleCopyLink}>
-          {copied ? "Copied!" : "Copy Link"}
-        </Button>
-        {typeof navigator.share === "function" && (
-          <Button variant="secondary" size="md" onClick={handleShare}>
-            Share
+    <Card className="max-w-md mx-auto w-full">
+      <CardContent className="p-6 text-center flex flex-col items-center gap-4">
+        <div className="bg-primary text-primary-foreground border-[3px] border-orange-600 rounded-3xl p-3 shadow-clay">
+          <Share2 className="h-7 w-7" />
+        </div>
+        <CardTitle className="text-xl">Your Room is Ready!</CardTitle>
+        <CardDescription>
+          Share this link with your partner to start your photo session
+        </CardDescription>
+        <div className="bg-muted rounded-xl p-3 w-full border-[3px] border-border shadow-clay-sm">
+          <code className="font-mono text-sm text-foreground break-all">
+            {roomLink}
+          </code>
+        </div>
+        <div className="flex gap-3 justify-center w-full">
+          <Button variant="default" onClick={handleCopyLink} className="flex-1">
+            {copied ? <Check className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+            {copied ? "Copied!" : "Copy Link"}
           </Button>
-        )}
-      </div>
+          {typeof navigator.share === "function" && (
+            <Button variant="secondary" onClick={handleShare} className="flex-1">
+              <Share2 className="h-5 w-5" />
+              Share
+            </Button>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 }

@@ -46,3 +46,5 @@ export function ThemeProvider({ children, prefService }: { children: ReactNode; 
 export function useTheme(): ThemeContextValue {
   return useContext(ThemeContext);
 }
+
+export type { ThemeContextValue };

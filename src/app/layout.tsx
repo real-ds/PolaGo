@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Fredoka, Quicksand } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeProvider";
+import { Toaster } from "@/components/ui/Sonner";
 
 const fredoka = Fredoka({
   variable: "--font-fredoka",
@@ -34,9 +35,10 @@ export default function RootLayout({
       lang="en"
       className={`${fredoka.variable} ${quicksand.variable}`}
     >
-      <body className="min-h-screen font-quicksand antialiased">
+      <body className="min-h-screen font-quicksand antialiased bg-background text-foreground">
         <ThemeProvider>
           {children}
+          <Toaster richColors closeButton />
         </ThemeProvider>
       </body>
     </html>

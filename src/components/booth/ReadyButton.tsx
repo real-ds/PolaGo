@@ -8,10 +8,14 @@ interface ReadyButtonProps {
   disabled?: boolean;
 }
 
-export function ReadyButton({ ready, onToggle, disabled = false }: ReadyButtonProps) {
+export function ReadyButton({
+  ready,
+  onToggle,
+  disabled = false,
+}: ReadyButtonProps) {
   return (
     <Button
-      variant={ready ? "primary" : "secondary"}
+      variant={ready ? "default" : "secondary"}
       size="lg"
       onClick={onToggle}
       disabled={disabled}

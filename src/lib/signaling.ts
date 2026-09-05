@@ -1,13 +1,21 @@
 import { ISignalingTransport } from "@/core/room/ISignalingTransport";
 import { InMemoryTransport } from "@/core/room/transports/InMemoryTransport";
-import { AblyTransport } from "@/core/room/transports/AblyTransport";
+import { HttpSignalingTransport } from "@/core/room/transports/HttpSignalingTransport";
 
 export function createSignalingTransport(): ISignalingTransport {
+  if (typeof window === "undefined") {
+    return new InMemoryTransport();
+  }
+
   try {
-    if (typeof process !== "undefined" && (process.env as Record<string, string>)["NEXT_PUBLIC_ABLY_API_KEY"]) {
-      return new AblyTransport();
+    const env = (typeof process !== "undefined" && process.env) as Record<string, string> | undefined;
+    if (env && env["NEXT_PUBLIC_ABLY_API_KEY"]) {
+      // AblyTransport not implemented for this fallback
     }
   } catch {
+    // Ignore
   }
-  return new InMemoryTransport();
+
+  // Use HTTP signaling for cross-device communication
+  return new HttpSignalingTransport();
 }
